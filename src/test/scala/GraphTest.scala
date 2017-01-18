@@ -1,6 +1,21 @@
-import org.scalatest.Matchers
+import org.scalatest.{FlatSpec, Matchers}
 
-class GraphTest extends org.scalatest.FlatSpec with Matchers with GraphWords {
+class GraphTest extends FlatSpec with Matchers with GraphWords {
+
+  behavior of "A Directed Graph"
+
+  it should "generate a digraph string" in new DiGraphWords {
+
+    digraph(
+      node('blah),
+      edge('from, 'to)
+    ).toString shouldBe
+      """digraph {
+        |blah;
+        |from -> to;
+        |}""".stripMargin
+
+  }
 
   behavior of "A Graph"
 
@@ -10,9 +25,9 @@ class GraphTest extends org.scalatest.FlatSpec with Matchers with GraphWords {
       node('blah),
       edge('from, 'to)
     ).toString shouldBe
-      """digraph {
+      """graph {
         |blah;
-        |from -> to;
+        |from -- to;
         |}""".stripMargin
 
   }
@@ -44,6 +59,10 @@ class GraphTest extends org.scalatest.FlatSpec with Matchers with GraphWords {
   behavior of "EdgeStatement"
 
   it should "print an id" in {
+    edge('from, 'to).toString shouldBe "from -- to;"
+  }
+
+  it should "print a directed edge" in new DiGraphWords {
     edge('from, 'to).toString shouldBe "from -> to;"
   }
 

@@ -1,5 +1,14 @@
-
 class Graph(statements: Seq[Statement]) {
+
+  override def toString: String = {
+    s"""graph {
+       |${statements.mkString("\n")}
+       |}""".stripMargin
+  }
+
+}
+
+class DiGraph(statements: Seq[Statement]) {
 
   override def toString: String = {
     s"""digraph {
@@ -13,12 +22,13 @@ trait Statement
 
 class NodeStatement(id: Symbol, attrs: Seq[Attribute]) extends Statement {
 
-  override def toString: String = id.name + (if (attrs.nonEmpty) attrs.mkString(" [", ", ", "]") else "") + ";"
+  override def toString: String =
+    id.name + (if (attrs.nonEmpty) attrs.mkString(" [", ", ", "]") else "") + ";"
 
 }
 
-class EdgeStatement(from: Symbol, to: Symbol) extends Statement {
-  override def toString: String = s"${from.name} -> ${to.name};"
+class EdgeStatement(from: Symbol, to: Symbol, edge: String) extends Statement {
+  override def toString: String = s"${from.name} $edge ${to.name};"
 }
 
 trait Attribute
@@ -31,6 +41,14 @@ class StringAttribute(id: Symbol, s: String) extends Attribute {
   override def toString: String = s"""${id.name} = "$s""""
 }
 
+trait DiGraphWords extends GraphWords {
+  override val edge = "->"
+
+  def digraph(statements: Statement*): DiGraph =
+    new DiGraph(statements)
+
+}
+
 trait GraphWords {
 
   implicit class SymbOps(symbol: Symbol) {
@@ -41,12 +59,16 @@ trait GraphWords {
 
   }
 
-  def graph(statements: Statement*): Graph = new Graph(statements)
+  val edge = "--"
 
-  def node(id: Symbol, attrs: Attribute*): NodeStatement = new NodeStatement(id, attrs)
+  def graph(statements: Statement*): Graph = {
+    new Graph(statements)
+  }
 
-  def edge(from: Symbol, to: Symbol): EdgeStatement = new EdgeStatement(from, to)
+  def node(id: Symbol, attrs: Attribute*): NodeStatement =
+    new NodeStatement(id, attrs)
+
+  def edge(from: Symbol, to: Symbol): EdgeStatement =
+    new EdgeStatement(from, to, edge)
 
 }
-
-
