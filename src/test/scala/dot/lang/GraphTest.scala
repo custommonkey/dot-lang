@@ -1,4 +1,6 @@
-import org.scalatest.{FlatSpec, Matchers}
+package dot.lang
+
+import org.scalatest.{Matchers, FlatSpec}
 
 class GraphTest extends FlatSpec with Matchers with GraphWords {
 
@@ -11,10 +13,19 @@ class GraphTest extends FlatSpec with Matchers with GraphWords {
       edge('from, 'to)
     ).toString shouldBe
       """digraph {
-        |blah;
-        |from -> to;
+        |  
+        |  blah;
+        |  from -> to;
         |}""".stripMargin
 
+  }
+
+  it should "generate attributes" in new DiGraphWords {
+    digraph(Seq('one := "two"), Nil).toString shouldBe
+        """digraph {
+        |  one = "two";
+        |  
+        |}""".stripMargin
   }
 
   behavior of "A Graph"
@@ -23,11 +34,13 @@ class GraphTest extends FlatSpec with Matchers with GraphWords {
 
     graph(
       node('blah),
-      edge('from, 'to)
+      edge('from, 'to),
+      cluster()
     ).toString shouldBe
       """graph {
         |blah;
         |from -- to;
+        |subgraph cluster_0 {}
         |}""".stripMargin
 
   }

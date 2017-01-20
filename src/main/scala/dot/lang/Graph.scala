@@ -1,3 +1,5 @@
+package dot.lang
+
 class Graph(statements: Seq[Statement]) {
 
   override def toString: String = {
@@ -8,11 +10,12 @@ class Graph(statements: Seq[Statement]) {
 
 }
 
-class DiGraph(statements: Seq[Statement]) {
+class DiGraph(attrs: Iterable[Attribute], statements: Iterable[Statement]) {
 
   override def toString: String = {
     s"""digraph {
-       |${statements.mkString("\n")}
+       |  ${if(attrs.nonEmpty) attrs.mkString("", ";\n  ", ";") else ""}
+       |  ${statements.mkString("\n  ")}
        |}""".stripMargin
   }
 
@@ -44,8 +47,14 @@ class StringAttribute(id: Symbol, s: String) extends Attribute {
 trait DiGraphWords extends GraphWords {
   override val edge = "->"
 
+  def digraph(attr: Attribute*)(statements: Statement*): DiGraph =
+    new DiGraph(attr, statements)
+
   def digraph(statements: Statement*): DiGraph =
-    new DiGraph(statements)
+    new DiGraph(Nil, statements)
+
+  def digraph(attr: Iterable[Attribute], statements: Iterable[Statement]): DiGraph =
+    new DiGraph(attr, statements)
 
 }
 
@@ -67,6 +76,8 @@ trait GraphWords {
 
   def node(id: Symbol, attrs: Attribute*): NodeStatement =
     new NodeStatement(id, attrs)
+
+  def node(id: Symbol): NodeStatement = new NodeStatement(id, Nil)
 
   def edge(from: Symbol, to: Symbol): EdgeStatement =
     new EdgeStatement(from, to, edge)
