@@ -1,27 +1,87 @@
 package dot.lang
 
-class Graph(statements: Seq[Statement]) {
+import dot.lang.Container.Statements
+
+object Container {
+
+  type Statements = Iterable[Statement]
+
+}
+
+abstract class Container(id: String) {
+
+  protected def children: Statements
 
   override def toString: String = {
-    s"""graph {
-       |${statements.mkString("\n")}
-       |}""".stripMargin
+    val childString = if (children.nonEmpty) {
+      children.mkString("\n  ", "\n  ", "\n")
+    } else {
+      ""
+    }
+    s"$id {$childString}"
   }
 
 }
 
-class DiGraph(attrs: Iterable[Attribute], statements: Iterable[Statement]) {
+class AttributeStatement(attr: Attribute) extends Statement {
+  override def toString: String = attr.toString + ";"
+}
 
-  override def toString: String = {
-    s"""digraph {
-       |  ${if(attrs.nonEmpty) attrs.mkString("", ";\n  ", ";") else ""}
-       |  ${statements.mkString("\n  ")}
-       |}""".stripMargin
-  }
+protected abstract class AbstractGraph(id: String,
+  statements: Statements)
+  extends Container(id) {
+  protected val children: Statements = statements
+}
+
+object Graph extends Node with ClusterWords with GraphWords {
+
+  val edgeSymbol = "--"
+
+  def graph(statements: Iterable[Statement]): Graph = new Graph(statements)
+
+  def graph(statements: Statement*): Graph = graph(statements)
 
 }
+
+class Graph(statements: Statements)
+  extends AbstractGraph("graph", statements)
+
+object DiGraph extends Node with ClusterWords with GraphWords {
+
+  val edgeSymbol = "->"
+
+  def digraph(statements: Iterable[Statement]): DiGraph = new DiGraph(statements)
+
+  def digraph(statements: Statement*): DiGraph = digraph(statements)
+
+}
+
+class DiGraph(statements: Statements) extends AbstractGraph("digraph", statements)
+
+trait ClusterWords {
+  def cluster(statements: Statement*) = new Cluster(statements)
+}
+
+class Cluster(statements: Iterable[Statement])
+  extends AbstractGraph("subgraph cluster_0", statements)
+    with Statement
 
 trait Statement
+
+trait Node {
+  def node(id: Symbol, attrs: Attribute*): NodeStatement =
+    new NodeStatement(id, attrs)
+
+  def node(id: Symbol): NodeStatement = new NodeStatement(id, Nil)
+
+  def edge(from: Symbol, to: Symbol): EdgeStatement = new EdgeStatement(from, to, edgeSymbol)
+
+  def edgeSymbol: String
+
+  implicit def toNode(id: Symbol): NodeStatement = node(id)
+
+  implicit def toEdge(e: (Symbol, Symbol)): EdgeStatement = edge(e._1, e._2)
+}
 
 class NodeStatement(id: Symbol, attrs: Seq[Attribute]) extends Statement {
 
@@ -36,50 +96,31 @@ class EdgeStatement(from: Symbol, to: Symbol, edge: String) extends Statement {
 
 trait Attribute
 
-class IntAttribute(id: Symbol, i: Int) extends Attribute {
-  override def toString: String = s"""${id.name} = $i"""
+class AnyRefAttributeBuilder(id: Symbol) {
+  def :=(value: AnyRef) = new AnyRefAttribute(id, value)
 }
 
-class StringAttribute(id: Symbol, s: String) extends Attribute {
-  override def toString: String = s"""${id.name} = "$s""""
+class AnyValAttributeBuilder(id: Symbol) {
+  def :=(value: AnyVal) = new AnyValAttribute(id, value)
 }
 
-trait DiGraphWords extends GraphWords {
-  override val edge = "->"
-
-  def digraph(attr: Attribute*)(statements: Statement*): DiGraph =
-    new DiGraph(attr, statements)
-
-  def digraph(statements: Statement*): DiGraph =
-    new DiGraph(Nil, statements)
-
-  def digraph(attr: Iterable[Attribute], statements: Iterable[Statement]): DiGraph =
-    new DiGraph(attr, statements)
-
+class AnyValAttribute(id: Symbol, anyVal: AnyVal) extends Attribute {
+  override def toString: String = s"""${id.name} = $anyVal"""
 }
 
-trait GraphWords {
+class AnyRefAttribute(id: Symbol, anyRef: AnyRef) extends Attribute {
+  override def toString: String = s"""${id.name} = "$anyRef""""
+}
 
-  implicit class SymbOps(symbol: Symbol) {
+protected trait GraphWords {
 
-    def :=(i: Int) = new IntAttribute(symbol, i)
+  val label = new AnyRefAttributeBuilder('label)
+  val colour = new AnyRefAttributeBuilder('color)
+  val bgcolour = new AnyRefAttributeBuilder('bgcolor)
+  val layout = new AnyRefAttributeBuilder('layout)
+  val fontsize = new AnyValAttributeBuilder('fontsize)
 
-    def :=(s: String) = new StringAttribute(symbol, s)
-
-  }
-
-  val edge = "--"
-
-  def graph(statements: Statement*): Graph = {
-    new Graph(statements)
-  }
-
-  def node(id: Symbol, attrs: Attribute*): NodeStatement =
-    new NodeStatement(id, attrs)
-
-  def node(id: Symbol): NodeStatement = new NodeStatement(id, Nil)
-
-  def edge(from: Symbol, to: Symbol): EdgeStatement =
-    new EdgeStatement(from, to, edge)
+  implicit def toStatement(attribute: Attribute): AttributeStatement =
+    new AttributeStatement(attribute)
 
 }
