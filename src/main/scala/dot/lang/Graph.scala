@@ -50,7 +50,7 @@ object DiGraph extends Node with ClusterWords with GraphWords {
 
   val edgeSymbol = "->"
 
-  def digraph(statements: Iterable[Statement]): DiGraph = new DiGraph(statements)
+  def digraph(statements: Iterable[Statement])(implicit dummyImplicit: DummyImplicit): DiGraph = new DiGraph(statements)
 
   def digraph(statements: Statement*): DiGraph = digraph(statements)
 
@@ -80,7 +80,11 @@ trait Node {
 
   implicit def toNode(id: Symbol): NodeStatement = node(id)
 
-  implicit def toEdge(e: (Symbol, Symbol)): EdgeStatement = edge(e._1, e._2)
+  implicit def symbolToEdge(e: (Symbol, Symbol)): EdgeStatement = edge(e._1, e._2)
+
+  implicit def stringToEdge(e: (String, String)): EdgeStatement = edge(Symbol(e._1), Symbol(e._2))
+
+  implicit def toEdges(e: Iterable[(String, String)]): Iterable[Statement] = e.map(stringToEdge)
 }
 
 class NodeStatement(id: Symbol, attrs: Seq[Attribute]) extends Statement {
