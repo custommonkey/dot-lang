@@ -7,7 +7,7 @@ import scala.collection.immutable.Seq
 import scala.collection.mutable
 import scala.meta._
 
-class AstExample extends App {
+object AstExample extends App {
 
   val ast: Term = "x * y + z + a".parse[Term].get
 

@@ -73,10 +73,12 @@ class GraphSpec extends FlatSpec with Matchers {
 
     import Graph._
 
+    implicit val inc = new Inc
+
     val g = graph(
       'blah,
       'from -> 'to,
-      cluster()
+      cluster(Nil)
     )
 
     g.toString shouldBe
@@ -157,10 +159,12 @@ class GraphSpec extends FlatSpec with Matchers {
   it should "print a cluster" in {
     import Graph._
 
-    val c = cluster(node('anode), node('bnode), edge('anode, 'bnode), label := "two")
+    implicit val inc = new Inc
+
+    val c = cluster(Seq(node('anode), node('bnode), edge('anode, 'bnode), label := "two"))
 
     c.toString shouldBe
-      """subgraph cluster_0 {
+      """subgraph cluster_1 {
         |  anode;
         |  bnode;
         |  anode -- bnode;

@@ -30,18 +30,34 @@ class AttributeStatement(attr: Attribute) extends Statement {
 protected abstract class AbstractGraph(id: String,
   statements: Statements)
   extends Container(id) {
-  protected val children: Statements = statements
+  protected val children: Statements = statements.flatMap {
+    case StatementGroup(s) => s
+    case s: Statement => Seq(s)
+  }
 }
+
+
+class Inc extends Function0[Int] {
+  var c = 0
+
+  override def apply(): Int = {
+    c = c + 1
+    c
+  }
+}
+
 
 object Graph extends NodeWords with ClusterWords with GraphWords {
 
   val edgeSymbol = "--"
 
-  def graph(statements: Iterable[Statement]): Graph = new Graph(statements)
+  def graph(statements: Statements): Graph = new Graph(statements)
 
   def graph(statements: Statement*): Graph = graph(statements)
 
 }
+
+case class StatementGroup(statement: Statements) extends Statement
 
 class Graph(statements: Statements)
   extends AbstractGraph("graph", statements)
@@ -50,7 +66,7 @@ object DiGraph extends NodeWords with ClusterWords with GraphWords {
 
   val edgeSymbol = "->"
 
-  def digraph(statements: Iterable[Statement])(implicit dummyImplicit: DummyImplicit): DiGraph = new DiGraph(statements)
+  def digraph(statements: Statements)(implicit dummyImplicit: DummyImplicit): DiGraph = new DiGraph(statements)
 
   def digraph(statements: Statement*): DiGraph = digraph(statements)
 
@@ -59,11 +75,14 @@ object DiGraph extends NodeWords with ClusterWords with GraphWords {
 class DiGraph(statements: Statements) extends AbstractGraph("digraph", statements)
 
 trait ClusterWords {
-  def cluster(statements: Statement*) = new Cluster(statements)
+  //def cluster(i: Int)(statements: Statement*)(implicit dummyImplicit: DummyImplicit) = new Cluster(i, statements)
+
+  def cluster(statements: Iterable[Statement])(implicit seq: () => Int) = new Cluster(seq(), statements)
+
 }
 
-class Cluster(statements: Iterable[Statement])
-  extends AbstractGraph("subgraph cluster_0", statements)
+class Cluster(i: Int, statements: Iterable[Statement])
+  extends AbstractGraph(s"subgraph cluster_$i", statements)
     with Statement
 
 trait Statement
@@ -74,7 +93,9 @@ trait NodeWords {
 
   def node(id: Symbol): Node = new Node(id, Nil)
 
-  def edge(from: Symbol, to: Symbol): Edge = new Edge(from, to, edgeSymbol)
+  def node(id: String, attrs: Attribute*): Node = node(Symbol(id), attrs: _*)
+
+  def edge(from: Symbol, to: Symbol): Edge = Edge(from, to, edgeSymbol)
 
   implicit def stringToSymbol(s: String) = Symbol(s)
 
@@ -87,9 +108,10 @@ trait NodeWords {
   implicit def stringToEdge(e: (String, String)): Edge = edge(Symbol(e._1), Symbol(e._2))
 
   implicit def toEdges(e: Iterable[(String, String)]): Iterable[Statement] = e.map(stringToEdge)
+
 }
 
-class Node(id: Symbol, attrs: Seq[Attribute]) extends Statement {
+case class Node(id: Symbol, attrs: Seq[Attribute]) extends Statement {
 
   override def toString: String =
     id.name + (if (attrs.nonEmpty) attrs.mkString(" [", ", ", "]") else "") + ";"
@@ -103,66 +125,127 @@ case class Edge(from: Symbol, to: Symbol, edge: String) extends Statement {
 trait Attribute
 
 trait Shapes {
+
   sealed trait Shape
+
   case object box extends Shape
+
   case object polygon extends Shape
+
   case object ellipse extends Shape
+
   case object oval extends Shape
+
   case object circle extends Shape
+
   case object point extends Shape
+
   case object egg extends Shape
+
   case object triangle extends Shape
+
   case object plaintext extends Shape
+
   case object plain extends Shape
+
   case object diamond extends Shape
+
   case object trapezium extends Shape
+
   case object parallelogram extends Shape
+
   case object house extends Shape
+
   case object pentagon extends Shape
+
   case object hexagon extends Shape
+
   case object septagon extends Shape
+
   case object octagon extends Shape
+
   case object doublecircle extends Shape
+
   case object doubleoctagon extends Shape
+
   case object tripleoctagon extends Shape
+
   case object invtriangle extends Shape
+
   case object invtrapezium extends Shape
+
   case object invhouse extends Shape
+
   case object Mdiamond extends Shape
+
   case object Msquare extends Shape
+
   case object Mcircle extends Shape
+
   case object rect extends Shape
+
   case object rectangle extends Shape
+
   case object square extends Shape
+
   case object star extends Shape
+
   case object none extends Shape
+
   case object underline extends Shape
+
   case object cylinder extends Shape
+
   case object note extends Shape
+
   case object tab extends Shape
+
   case object folder extends Shape
+
   case object box3d extends Shape
+
   case object component extends Shape
+
   case object promoter extends Shape
+
   case object cds extends Shape
+
   case object terminator extends Shape
+
   case object utr extends Shape
+
   case object primersite extends Shape
+
   case object restrictionsite extends Shape
+
   case object fivepoverhang extends Shape
+
   case object threepoverhang extends Shape
+
   case object noverhang extends Shape
+
   case object assembly extends Shape
+
   case object signature extends Shape
+
   case object insulator extends Shape
+
   case object ribosite extends Shape
+
   case object rnastab extends Shape
+
   case object proteasesite extends Shape
+
   case object proteinstab extends Shape
+
   case object rpromoter extends Shape
+
   case object rarrow extends Shape
+
   case object larrow extends Shape
+
   case object lpromoter extends Shape
+
 }
 
 class AnyRefAttributeBuilder(id: Symbol) {
@@ -202,6 +285,7 @@ trait AttributeNames extends Shapes {
   val shape = new EnumAttributeBuilder[Shape]('shape)
   val label = new AnyRefAttributeBuilder('label)
   val colour = new AnyRefAttributeBuilder('color)
+  val fontcolour = new AnyRefAttributeBuilder('fontcolor)
   val bgcolour = new AnyRefAttributeBuilder('bgcolor)
   val layout = new AnyRefAttributeBuilder('layout)
   val fontsize = new AnyValAttributeBuilder('fontsize)
@@ -210,6 +294,9 @@ trait AttributeNames extends Shapes {
 
 
 protected trait GraphWords extends AttributeNames {
+
+  implicit def toStatementGroup(statements: Statements): StatementGroup = StatementGroup(statements)
+
 
   implicit def toStatement(attribute: Attribute): AttributeStatement =
     new AttributeStatement(attribute)
