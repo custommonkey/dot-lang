@@ -161,9 +161,18 @@ class GraphSpec extends FlatSpec with Matchers {
 
     implicit val inc = new Inc
 
-    val c = cluster(Seq(node('anode), node('bnode), edge('anode, 'bnode), label := "two"))
+    val c0 = cluster(Seq(node('anode), node('bnode), edge('anode, 'bnode), label := "two"))
 
-    c.toString shouldBe
+    c0.toString shouldBe
+      """subgraph cluster_0 {
+        |  anode;
+        |  bnode;
+        |  anode -- bnode;
+        |  label = "two";
+        |}""".stripMargin
+
+    val c1 = cluster(Seq(node('anode), node('bnode), edge('anode, 'bnode), label := "two"))
+    c1.toString shouldBe
       """subgraph cluster_1 {
         |  anode;
         |  bnode;

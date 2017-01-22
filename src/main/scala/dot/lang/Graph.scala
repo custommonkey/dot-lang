@@ -38,12 +38,13 @@ protected abstract class AbstractGraph(id: String,
 
 
 class Inc extends Function0[Int] {
+
   var c = 0
 
-  override def apply(): Int = {
+  override def apply(): Int = Function.const(c) {
     c = c + 1
-    c
   }
+
 }
 
 
