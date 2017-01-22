@@ -2,7 +2,7 @@ package dot.lang
 
 import org.scalatest.{FlatSpec, Matchers}
 
-class GraphTest extends FlatSpec with Matchers {
+class GraphSpec extends FlatSpec with Matchers {
 
   behavior of "A Directed Graph"
 
@@ -117,7 +117,12 @@ class GraphTest extends FlatSpec with Matchers {
     (label := "two").toString shouldBe """label = "two""""
   }
 
-  behavior of "EdgeStatement"
+  it should """print enum values""" in {
+    import Graph._
+    (shape := box).toString shouldBe "shape = box"
+  }
+
+  behavior of "Edge"
 
   it should "print an id" in {
     import Graph._
@@ -127,6 +132,24 @@ class GraphTest extends FlatSpec with Matchers {
   it should "print a directed edge" in {
     import DiGraph._
     edge('from, 'to).toString shouldBe "from -> to;"
+  }
+
+  it should "create edge from strings" in {
+    import DiGraph._
+
+    val e: Edge = ("from", "to")
+
+    e.toString shouldBe "from -> to;"
+
+  }
+
+  it should "create edge from seq of strings" in {
+    import DiGraph._
+
+    val a: Iterable[Statement] = Seq[(String, String)]("from" -> "to")
+
+    a shouldBe Seq[Edge]('from -> 'to)
+
   }
 
   behavior of "Cluster"
