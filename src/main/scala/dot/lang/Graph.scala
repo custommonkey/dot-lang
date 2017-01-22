@@ -124,6 +124,30 @@ case class Edge(from: Symbol, to: Symbol, edge: String) extends Statement {
 
 trait Attribute
 
+trait Styles {
+
+  sealed trait Style
+
+  case object solid extends Style
+
+  case object dashed extends Style
+
+  case object dotted extends Style
+
+  case object bold extends Style
+
+  case object rounded extends Style
+
+  case object diagonals extends Style
+
+  case object filled extends Style
+
+  case object striped extends Style
+
+  case object wedged extends Style
+
+}
+
 trait Shapes {
 
   sealed trait Shape
@@ -280,13 +304,15 @@ class AnyRefAttribute(id: Symbol, anyRef: AnyRef) extends Attribute {
   override def toString: String = s"""${id.name} = "$anyRef""""
 }
 
-trait AttributeNames extends Shapes {
+trait AttributeNames extends Shapes with Styles {
 
+  val style = new EnumAttributeBuilder[Style]('style)
   val shape = new EnumAttributeBuilder[Shape]('shape)
   val label = new AnyRefAttributeBuilder('label)
   val colour = new AnyRefAttributeBuilder('color)
   val fontcolour = new AnyRefAttributeBuilder('fontcolor)
   val bgcolour = new AnyRefAttributeBuilder('bgcolor)
+  val fillcolour = new AnyRefAttributeBuilder('fillcolor)
   val layout = new AnyRefAttributeBuilder('layout)
   val fontsize = new AnyValAttributeBuilder('fontsize)
 
@@ -294,6 +320,8 @@ trait AttributeNames extends Shapes {
 
 
 protected trait GraphWords extends AttributeNames {
+
+  implicit def toStatementGroup(statements: Seq[Statement]): StatementGroup = StatementGroup(statements)
 
   implicit def toStatementGroup(statements: Statements): StatementGroup = StatementGroup(statements)
 

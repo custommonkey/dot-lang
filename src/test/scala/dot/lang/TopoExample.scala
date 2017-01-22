@@ -60,12 +60,16 @@ object TopoExample extends App {
       centre("cccc", 'e -> 'f)
     ).make
 
+  val styles = Seq[Statement](
+    bgcolour := "#0B486B",
+    colour := "#79BD9A",
+    fontcolour := "#CFF09E",
+    node('node, style := filled, fillcolour := "#3B8686", fontcolour := "#CFF09E", colour := "#79BD9A"),
+    node('edge, colour := "#79BD9A")
+  )
+
   val dot = graph(
-    bgcolour := "blue",
-    colour := "white",
-    fontcolour := "white",
-    node('node, fontcolour := "white", colour := "white"),
-    node('edge, colour := "white"),
+    styles,
     nodes,
     dev,
     test,
