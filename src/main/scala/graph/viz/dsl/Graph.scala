@@ -1,6 +1,7 @@
-package dot.lang
+package graph.viz.dsl
 
-import dot.lang.Container.Statements
+import graph.viz.dsl.Container.Statements
+
 
 object Container {
 

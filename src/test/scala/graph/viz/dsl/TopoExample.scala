@@ -1,7 +1,7 @@
-package dot.lang
+package graph.viz.dsl
 
 import better.files.File
-import dot.lang.Graph._
+import graph.viz.dsl.Graph._
 
 import scala.collection.mutable
 

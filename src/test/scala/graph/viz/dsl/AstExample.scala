@@ -1,7 +1,7 @@
-package dot.lang
+package graph.viz.dsl
 
 import better.files.File
-import dot.lang.DiGraph._
+import graph.viz.dsl.DiGraph._
 
 import scala.collection.immutable.Seq
 import scala.collection.mutable
