@@ -1,6 +1,6 @@
-package graph.viz.dsl
+package graphviz.dsl
 
-import graph.viz.dsl.Container.Statements
+import graphviz.dsl.Container.Statements
 
 
 object Container {

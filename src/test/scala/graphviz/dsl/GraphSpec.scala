@@ -1,4 +1,4 @@
-package graph.viz.dsl
+package graphviz.dsl
 
 import org.scalatest.{FlatSpec, Matchers}
 
