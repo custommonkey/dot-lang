@@ -12,7 +12,7 @@ class GraphSpec extends FlatSpec with Matchers {
     digraph(
       node('blah),
       edge('from, 'to)
-    ).toString shouldBe
+    ).stringify shouldBe
       """digraph {
         |  blah;
         |  from -> to;
@@ -25,7 +25,7 @@ class GraphSpec extends FlatSpec with Matchers {
 
     val seq = Seq(node('blah), edge('from, 'to))
 
-    digraph(seq).toString shouldBe
+    digraph(seq).stringify shouldBe
       """digraph {
         |  blah;
         |  from -> to;
@@ -38,7 +38,7 @@ class GraphSpec extends FlatSpec with Matchers {
 
     val seq = Seq(node('blah), edge('from, 'to))
 
-    graph(seq).toString shouldBe
+    graph(seq).stringify shouldBe
       """graph {
         |  blah;
         |  from -- to;
@@ -50,7 +50,7 @@ class GraphSpec extends FlatSpec with Matchers {
 
     import DiGraph._
 
-    digraph(label := "two").toString shouldBe
+    digraph(label := "two").stringify shouldBe
       """digraph {
         |  label = "two";
         |}""".stripMargin
@@ -60,7 +60,7 @@ class GraphSpec extends FlatSpec with Matchers {
 
     import DiGraph._
 
-    digraph(layout := "two", node('anode)).toString shouldBe
+    digraph(layout := "two", node('anode)).stringify shouldBe
       """digraph {
         |  layout = "two";
         |  anode;
@@ -81,11 +81,13 @@ class GraphSpec extends FlatSpec with Matchers {
       cluster(Nil)
     )
 
-    g.toString shouldBe
+    g.stringify shouldBe
       """graph {
         |  blah;
         |  from -- to;
-        |  subgraph cluster_0 {}
+        |  subgraph cluster_0 {
+        |
+        |  }
         |}""".stripMargin
 
   }
@@ -94,46 +96,46 @@ class GraphSpec extends FlatSpec with Matchers {
 
   it should "print it's name" in {
     import Graph._
-    node('name).toString shouldBe "name;"
+    node('name).stringify shouldBe "name"
   }
 
   it should "print it's name and attribute" in {
     import Graph._
-    node('name, fontsize := 1).toString shouldBe "name [fontsize = 1];"
+    node('name, fontsize := 1).stringify shouldBe "name [fontsize = 1]"
   }
 
   it should "print it's name and attributes" in {
     import Graph._
-    node('name, label := "one", fontsize := 2).toString shouldBe """name [label = "one", fontsize = 2];"""
+    node('name, label := "one", fontsize := 2).stringify shouldBe """name [label = "one", fontsize = 2]"""
   }
 
   behavior of "Attribute"
 
   it should "print name = value" in {
     import Graph._
-    (fontsize := 1).toString shouldBe "fontsize = 1"
+    (fontsize := 1).stringify shouldBe "fontsize = 1"
   }
 
   it should """print name = "value"""" in {
     import Graph._
-    (label := "two").toString shouldBe """label = "two""""
+    (label := "two").stringify shouldBe """label = "two""""
   }
 
   it should """print enum values""" in {
     import Graph._
-    (shape := box).toString shouldBe "shape = box"
+    (shape := box).stringify shouldBe "shape = box"
   }
 
   behavior of "Edge"
 
   it should "print an id" in {
     import Graph._
-    edge('from, 'to).toString shouldBe "from -- to;"
+    edge('from, 'to).stringify shouldBe "from -- to"
   }
 
   it should "print a directed edge" in {
     import DiGraph._
-    edge('from, 'to).toString shouldBe "from -> to;"
+    edge('from, 'to).stringify shouldBe "from -> to"
   }
 
   it should "create edge from strings" in {
@@ -141,7 +143,7 @@ class GraphSpec extends FlatSpec with Matchers {
 
     val e: Edge = ("from", "to")
 
-    e.toString shouldBe "from -> to;"
+    e.stringify shouldBe "from -> to"
 
   }
 
@@ -161,9 +163,9 @@ class GraphSpec extends FlatSpec with Matchers {
 
     implicit val inc = new Inc
 
-    val c0 = cluster(Seq(node('anode), node('bnode), edge('anode, 'bnode), label := "two"))
+    val c0 = cluster(node('anode), node('bnode), edge('anode, 'bnode), label := "two")
 
-    c0.toString shouldBe
+    c0.stringify shouldBe
       """subgraph cluster_0 {
         |  anode;
         |  bnode;
@@ -172,7 +174,7 @@ class GraphSpec extends FlatSpec with Matchers {
         |}""".stripMargin
 
     val c1 = cluster(Seq(node('anode), node('bnode), edge('anode, 'bnode), label := "two"))
-    c1.toString shouldBe
+    c1.stringify shouldBe
       """subgraph cluster_1 {
         |  anode;
         |  bnode;

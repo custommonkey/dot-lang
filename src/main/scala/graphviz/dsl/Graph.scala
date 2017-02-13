@@ -2,43 +2,29 @@ package graphviz.dsl
 
 import graphviz.dsl.Container.Statements
 
-
 object Container {
 
   type Statements = Iterable[Statement]
 
 }
 
-abstract class Container(id: String) {
+trait Container {
 
-  protected def children: Statements
-
-  override def toString: String = {
-    val childString = if (children.nonEmpty) {
-      children.mkString("\n  ", "\n  ", "\n")
-    } else {
-      ""
-    }
-    s"$id {$childString}"
-  }
+  def children: Statements
 
 }
 
-class AttributeStatement(attr: Attribute) extends Statement {
-  override def toString: String = attr.toString + ";"
-}
+case class AttributeStatement(attr: Attribute[_]) extends Statement
 
-protected abstract class AbstractGraph(id: String,
-  statements: Statements)
-  extends Container(id) {
-  protected val children: Statements = statements.flatMap {
+protected abstract class AbstractGraph(statements: Statements)
+  extends Container {
+  val children: Statements = statements.flatMap {
     case StatementGroup(s) => s
     case s: Statement => Seq(s)
   }
 }
 
-
-class Inc extends Function0[Int] {
+class Inc extends (() => Int) {
 
   var c = 0
 
@@ -48,6 +34,21 @@ class Inc extends Function0[Int] {
 
 }
 
+case class StatementGroup(statement: Statements) extends Statement
+
+case class DiGraph(statements: Statements) extends AbstractGraph(statements)
+
+case class Graph(statements: Statements) extends AbstractGraph(statements)
+
+object DiGraph extends NodeWords with ClusterWords with GraphWords {
+
+  val edgeSymbol = "->"
+
+  def digraph(statements: Statements): DiGraph = new DiGraph(statements)
+
+  def digraph(statements: Statement*): DiGraph = digraph(statements)
+
+}
 
 object Graph extends NodeWords with ClusterWords with GraphWords {
 
@@ -59,49 +60,31 @@ object Graph extends NodeWords with ClusterWords with GraphWords {
 
 }
 
-case class StatementGroup(statement: Statements) extends Statement
-
-class Graph(statements: Statements)
-  extends AbstractGraph("graph", statements)
-
-object DiGraph extends NodeWords with ClusterWords with GraphWords {
-
-  val edgeSymbol = "->"
-
-  def digraph(statements: Statements)(implicit dummyImplicit: DummyImplicit): DiGraph = new DiGraph(statements)
-
-  def digraph(statements: Statement*): DiGraph = digraph(statements)
-
-}
-
-class DiGraph(statements: Statements) extends AbstractGraph("digraph", statements)
-
 trait ClusterWords {
-  //def cluster(i: Int)(statements: Statement*)(implicit dummyImplicit: DummyImplicit) = new Cluster(i, statements)
 
-  def cluster(statements: Iterable[Statement])(implicit seq: () => Int) = new Cluster(seq(), statements)
+  def cluster(statement: Statement, statements: Statement*)(implicit seq: () => Int) = Cluster(seq(), statement +: statements)
+
+  def cluster(statements: Iterable[Statement])(implicit seq: () => Int) = Cluster(seq(), statements)
 
 }
 
-class Cluster(i: Int, statements: Iterable[Statement])
-  extends AbstractGraph(s"subgraph cluster_$i", statements)
+case class Cluster(i: Int, statements: Iterable[Statement])
+  extends AbstractGraph(statements)
     with Statement
 
 trait Statement
 
 trait NodeWords {
-  def node(id: Symbol, attrs: Attribute*): Node =
-    new Node(id, attrs)
+  def node(id: Symbol, attrs: Attribute[_]*): Node =
+    Node(id, attrs)
 
-  def node(id: Symbol): Node = new Node(id, Nil)
+  def node(id: Symbol): Node = Node(id, Nil)
 
-  def node(id: String, attrs: Attribute*): Node = node(Symbol(id), attrs: _*)
+  def node(id: String, attrs: Attribute[_]*): Node = node(Symbol(id), attrs: _*)
 
-  def edge(from: Symbol, to: Symbol): Edge = Edge(from, to, edgeSymbol)
+  def edge(from: Symbol, to: Symbol): Edge = Edge(from, to)
 
-  implicit def stringToSymbol(s: String) = Symbol(s)
-
-  def edgeSymbol: String
+  implicit def stringToSymbol(s: String): Symbol = Symbol(s)
 
   implicit def toNode(id: Symbol): Node = node(id)
 
@@ -113,22 +96,17 @@ trait NodeWords {
 
 }
 
-case class Node(id: Symbol, attrs: Seq[Attribute]) extends Statement {
+case class Node(id: Symbol, attrs: Seq[Attribute[_]]) extends Statement
 
-  override def toString: String =
-    id.name + (if (attrs.nonEmpty) attrs.mkString(" [", ", ", "]") else "") + ";"
+case class Edge(from: Symbol, to: Symbol) extends Statement
 
-}
+case class Attribute[T](id: Symbol, value: T) extends Statement
 
-case class Edge(from: Symbol, to: Symbol, edge: String) extends Statement {
-  override def toString: String = s"${from.name} $edge ${to.name};"
-}
-
-trait Attribute
+trait Enom
 
 trait Styles {
 
-  sealed trait Style
+  sealed trait Style extends Enom
 
   case object solid extends Style
 
@@ -152,7 +130,7 @@ trait Styles {
 
 trait Shapes {
 
-  sealed trait Shape
+  sealed trait Shape extends Enom
 
   case object box extends Shape
 
@@ -275,35 +253,19 @@ trait Shapes {
 }
 
 class AnyRefAttributeBuilder(id: Symbol) {
-  def :=(value: AnyRef) = new AnyRefAttribute(id, value)
+  def :=(value: AnyRef): Attribute[AnyRef] = Attribute[AnyRef](id, value)
 }
 
-class EnumAttributeBuilder[T](id: Symbol) {
-  def :=(value: T) = new EnumAttribute[T](id, value)
+class EnumAttributeBuilder[T <: Enom](id: Symbol) {
+  def :=(value: T): Attribute[T] = Attribute[T](id, value)
 }
 
 class SymbolAttributeBuilder(id: Symbol) {
-  def :=(value: Symbol) = new SymbolAttribute(id, value)
+  def :=(value: Symbol): Attribute[Symbol] = Attribute[Symbol](id, value)
 }
 
 class AnyValAttributeBuilder(id: Symbol) {
-  def :=(value: AnyVal) = new AnyValAttribute(id, value)
-}
-
-class AnyValAttribute(id: Symbol, anyVal: AnyVal) extends Attribute {
-  override def toString: String = s"""${id.name} = $anyVal"""
-}
-
-class SymbolAttribute(id: Symbol, symbol: Symbol) extends Attribute {
-  override def toString: String = s"""${id.name} = ${symbol.name}"""
-}
-
-class EnumAttribute[T](id: Symbol, enum: T) extends Attribute {
-  override def toString: String = s"""${id.name} = $enum"""
-}
-
-class AnyRefAttribute(id: Symbol, anyRef: AnyRef) extends Attribute {
-  override def toString: String = s"""${id.name} = "$anyRef""""
+  def :=(value: AnyVal): Attribute[AnyVal] = Attribute[AnyVal](id, value)
 }
 
 trait AttributeNames extends Shapes with Styles {
@@ -320,15 +282,48 @@ trait AttributeNames extends Shapes with Styles {
 
 }
 
-
 protected trait GraphWords extends AttributeNames {
+
+  implicit val indentation: String = ""
+
+  def edgeSymbol: String
+
+  implicit class Ops(ref: Any) {
+    def stringify(implicit indentation: String): String = apply(ref)
+  }
+
+  def apply[T](thing: Any)(implicit indentation: String): String = {
+
+    def block(name: String, statements: Statements)(implicit indentation: String) =
+      s"""$indentation$name {
+         |${statements.stringify("  ")}
+         |$indentation}""".stripMargin
+
+    def attr(name: String, anyVal: String) = s"""$indentation$name = $anyVal"""
+
+    thing match {
+      case e: Seq[_] => e.map {
+        case a: Cluster => a.stringify(indentation)
+        case s => s.stringify(indentation) + ";"
+      }.mkString("\n")
+      case Attribute(Symbol(name), anyVal: Int) => attr(name, anyVal.toString)
+      case Attribute(Symbol(name), enom: Enom) => attr(name, enom.toString)
+      case Attribute(Symbol(name), anyRef: AnyRef) => attr(name, s""""$anyRef"""")
+      case Attribute(Symbol(name), Symbol(symbol)) => attr(name, symbol)
+      case Edge(Symbol(from), Symbol(to)) => s"$indentation$from $edgeSymbol $to"
+      case Node(Symbol(name), attrs) => indentation + name + (if (attrs.nonEmpty) attrs.map(_.stringify).mkString(" [", ", ", "]") else "")
+      case AttributeStatement(attr) => indentation + attr.stringify + ";"
+      case DiGraph(statements) => block("digraph", statements)
+      case Graph(statements) => block("graph", statements)
+      case Cluster(i, statements) => block(s"subgraph cluster_$i", statements)
+    }
+
+  }
 
   implicit def toStatementGroup(statements: Seq[Statement]): StatementGroup = StatementGroup(statements)
 
   implicit def toStatementGroup(statements: Statements): StatementGroup = StatementGroup(statements)
 
-
-  implicit def toStatement(attribute: Attribute): AttributeStatement =
-    new AttributeStatement(attribute)
+  implicit def toStatement(attribute: Attribute[_]): AttributeStatement = AttributeStatement(attribute)
 
 }
